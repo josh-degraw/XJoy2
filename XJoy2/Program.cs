@@ -1,11 +1,12 @@
 ﻿using HidApiAdapter;
 using NLog;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 
 namespace XJoy2
 {
-    public static class Program
+    public class Program : IDisposable
     {
         private static readonly Lazy<ILogger> _logger = new Lazy<ILogger>(LogManager.GetCurrentClassLogger);
 
@@ -13,18 +14,33 @@ namespace XJoy2
 
         private static void Main()
         {
+            Logger.Info("Starting program");
+            using (var program = new Program())
+            {
+                program.Run();
+            }
+        }
+
+        private readonly List<IDisposable> _adapters = new List<IDisposable>(2);
+
+        public void Run()
+        {
             var mut = new Mutex();
             try
             {
-                Logger.Info("Starting program");
-                var manager = HidDeviceManager.GetManager();
+                HidDeviceManager manager = HidDeviceManager.GetManager();
+
                 while (ControllerAdapter.RegisteredPairs < 2)
                 {
                     var adapter = new ControllerAdapter(manager, Logger);
+                    _adapters.Add(adapter);
+
                     if (adapter.CanInitialize())
                     {
                         adapter.Start();
                     }
+
+                    // Wait for the first pair to be set up before trying another one
                     while (!adapter.IsInitialized)
                     {
                         Thread.Sleep(500);
@@ -36,11 +52,20 @@ namespace XJoy2
             {
                 Logger.Fatal(ex, "Unexpected error.");
             }
-            finally
+        }
+
+        #region IDisposable
+        
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
+        public void Dispose()
+        {
+            foreach (IDisposable adapter in _adapters)
             {
-                Console.WriteLine("Closing program. Press any key to exit...");
-                Console.ReadKey();
+                adapter.Dispose();
             }
         }
+        #endregion IDisposable
     }
 }

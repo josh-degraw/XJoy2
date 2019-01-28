@@ -50,11 +50,11 @@ namespace XJoy2
             return manager.GetJoycons(side).Where(IsAvailable);
         }
 
-        public static string ToString(this JoyconRegion region, JoyConButton button)
+        public static string ToString(this JoyConRegion region, JoyConButton button)
         {
             switch (region)
             {
-                case JoyconRegion.LeftDpad:
+                case JoyConRegion.LeftDpad:
                     switch (button)
                     {
                         case JoyConButton.LDpadLeft: return "L_DPAD_LEFT";
@@ -63,7 +63,7 @@ namespace XJoy2
                         case JoyConButton.LDpadRight: return "L_DPAD_RIGHT";
                     }
                     break;
-                case JoyconRegion.LeftAnalog:
+                case JoyConRegion.LeftAnalog:
                     switch (button)
                     {
                         case JoyConButton.LAnalogLeft: return "L_ANALOG_LEFT";
@@ -77,7 +77,7 @@ namespace XJoy2
                         case JoyConButton.LAnalogNone: return "L_ANALOG_NONE";
                     }
                     break;
-                case JoyconRegion.LeftAux:
+                case JoyConRegion.LeftAux:
                     switch (button)
                     {
                         case JoyConButton.LShoulder: return "L_SHOULDER";
@@ -87,7 +87,7 @@ namespace XJoy2
                         case JoyConButton.LStick: return "L_STICK";
                     }
                     break;
-                case JoyconRegion.RightButtons:
+                case JoyConRegion.RightButtons:
                     switch (button)
                     {
                         case JoyConButton.RButA: return "R_BUT_A";
@@ -96,7 +96,7 @@ namespace XJoy2
                         case JoyConButton.RButX: return "R_BUT_X";
                     }
                     break;
-                case JoyconRegion.RightAux:
+                case JoyConRegion.RightAux:
                     switch (button)
                     {
                         case JoyConButton.RShoulder: return "R_SHOULDER";
@@ -106,7 +106,7 @@ namespace XJoy2
                         case JoyConButton.RStick: return "R_STICK";
                     }
                     break;
-                case JoyconRegion.RightAnalog:
+                case JoyConRegion.RightAnalog:
                     switch (button)
                     {
                         case JoyConButton.RAnalogLeft: return "R_ANALOG_LEFT";
@@ -125,6 +125,12 @@ namespace XJoy2
             }
             throw new InvalidOperationException("Invalid Button");
         }
-    
+
+        public static bool IsButton(this byte data, JoyConButton button)
+        {
+            var pushedButton = (JoyConButton)data;
+            return (pushedButton & button) == button;
+        }
+
     }
 }

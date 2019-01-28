@@ -7,17 +7,12 @@ namespace XJoy2
 
     public class ButtonProcessor
     {
-        public Xbox360Buttons left_buttons { get; private set; }
-
-        public Xbox360Buttons right_buttons { get; private set; }
-
-        public string RightButton => right_buttons.ToString();
-
-        public string LeftButton => left_buttons.ToString();
-
-        private readonly Xbox360Report report;
+        #region Private Fields
 
         private readonly ILogger Logger;
+        private readonly Xbox360Report report;
+
+        #endregion Private Fields
 
         public ButtonProcessor(ILogger logger, Xbox360Report report)
         {
@@ -25,96 +20,61 @@ namespace XJoy2
             this.report = report;
         }
 
-        public void process_left_joycon(byte[] data)
-        {
-            this.report.LeftTrigger = 0;
-            this.left_buttons = 0;
+        #region Public Properties
 
-            this.region_part(data[1], JoyconRegion.LeftDpad, JoyConButton.LDpadUp);
-            this.region_part(data[1], JoyconRegion.LeftDpad, JoyConButton.LDpadDown);
-            this.region_part(data[1], JoyconRegion.LeftDpad, JoyConButton.LDpadLeft);
-            this.region_part(data[1], JoyconRegion.LeftDpad, JoyConButton.LDpadRight);
-            this.process_buttons(JoyconRegion.LeftAnalog, (JoyConButton)data[3]);
-            this.region_part(data[2], JoyconRegion.LeftAux, JoyConButton.LTrigger);
-            this.region_part(data[2], JoyconRegion.LeftAux, JoyConButton.LShoulder);
-            this.region_part(data[2], JoyconRegion.LeftAux, JoyConButton.LCapture);
-            this.region_part(data[2], JoyconRegion.LeftAux, JoyConButton.LMinus);
-            this.region_part(data[2], JoyconRegion.LeftAux, JoyConButton.LStick);
+        /// <summary>
+        /// The buttons pressed on the left Joy-Con
+        /// </summary>
+        public Xbox360Buttons LeftButtons { get; private set; }
 
-            this.AssignButtons();
-        }
+        /// <summary>
+        /// The buttons pressed on the right Joy-Con
+        /// </summary>
+        public Xbox360Buttons RightButtons { get; private set; }
+
+        #endregion Public Properties
+
+        #region Private Methods
 
         private void AssignButtons()
         {
-            Xbox360Buttons buttons = this.right_buttons | this.left_buttons;
+            Xbox360Buttons buttons = this.RightButtons | this.LeftButtons;
             this.report.Buttons = (ushort)buttons;
         }
 
-        public void process_right_joycon(byte[] data)
+        private void ProcessButton(JoyConRegion region, JoyConButton button)
         {
-            this.report.RightTrigger = 0;
-            this.right_buttons = 0;
-
-            this.region_part(data[1], JoyconRegion.RightButtons, JoyConButton.RButA);
-            this.region_part(data[1], JoyconRegion.RightButtons, JoyConButton.RButB);
-            this.region_part(data[1], JoyconRegion.RightButtons, JoyConButton.RButX);
-            this.region_part(data[1], JoyconRegion.RightButtons, JoyConButton.RButY);
-            this.process_buttons(JoyconRegion.RightAnalog, (JoyConButton)data[3]);
-            this.region_part(data[2], JoyconRegion.RightAux, JoyConButton.RTrigger);
-            this.region_part(data[2], JoyconRegion.RightAux, JoyConButton.RShoulder);
-            this.region_part(data[2], JoyconRegion.RightAux, JoyConButton.RHome);
-            this.region_part(data[2], JoyconRegion.RightAux, JoyConButton.RPlus);
-            this.region_part(data[2], JoyconRegion.RightAux, JoyConButton.RStick);
-
-            this.AssignButtons();
-        }
-
-        public static bool has_button(byte data, JoyConButton button)
-        {
-            var dataChar = (JoyConButton)data;
-            return (dataChar & button) == button;
-        }
-
-        public void region_part(byte data, JoyconRegion region, JoyConButton button)
-        {
-            if (has_button(data, button))
-            {
-                this.process_buttons(region, button);
-            }
-        }
-
-        private void process_button(JoyconRegion region, JoyConButton button)
-        {
-            if (!((region == JoyconRegion.LeftAnalog && button == JoyConButton.LAnalogNone)
-                  || (region == JoyconRegion.RightAnalog && button == JoyConButton.RAnalogNone)))
+            if (!((region == JoyConRegion.LeftAnalog && button == JoyConButton.LAnalogNone)
+                  || (region == JoyConRegion.RightAnalog && button == JoyConButton.RAnalogNone)))
             {
                 Logger.Debug(region.ToString(button));
             }
 
+            // ReSharper disable SwitchStatementMissingSomeCases
             switch (region)
             {
-                case JoyconRegion.LeftDpad:
+                case JoyConRegion.LeftDpad:
                     switch (button)
                     {
                         case JoyConButton.LDpadUp:
-                            this.left_buttons |= Xbox360Buttons.Up;
+                            this.LeftButtons |= Xbox360Buttons.Up;
                             break;
 
                         case JoyConButton.LDpadDown:
-                            this.left_buttons |= Xbox360Buttons.Down;
+                            this.LeftButtons |= Xbox360Buttons.Down;
                             break;
 
                         case JoyConButton.LDpadLeft:
-                            this.left_buttons |= Xbox360Buttons.Left;
+                            this.LeftButtons |= Xbox360Buttons.Left;
                             break;
 
                         case JoyConButton.LDpadRight:
-                            this.left_buttons |= Xbox360Buttons.Right;
+                            this.LeftButtons |= Xbox360Buttons.Right;
                             break;
                     }
                     break;
 
-                case JoyconRegion.LeftAnalog:
+                case JoyConRegion.LeftAnalog:
                     switch (button)
                     {
                         case JoyConButton.LAnalogDown:
@@ -164,11 +124,11 @@ namespace XJoy2
                     }
                     break;
 
-                case JoyconRegion.LeftAux:
+                case JoyConRegion.LeftAux:
                     switch (button)
                     {
                         case JoyConButton.LShoulder:
-                            this.left_buttons |= Xbox360Buttons.LeftShoulder;
+                            this.LeftButtons |= Xbox360Buttons.LeftShoulder;
                             break;
 
                         case JoyConButton.LTrigger:
@@ -177,16 +137,16 @@ namespace XJoy2
 
                         case JoyConButton.LCapture:
                         case JoyConButton.LMinus:
-                            this.left_buttons |= Xbox360Buttons.Back;
+                            this.LeftButtons |= Xbox360Buttons.Back;
                             break;
 
                         case JoyConButton.LStick:
-                            this.left_buttons |= Xbox360Buttons.LeftThumb;
+                            this.LeftButtons |= Xbox360Buttons.LeftThumb;
                             break;
                     }
                     break;
 
-                case JoyconRegion.RightAnalog:
+                case JoyConRegion.RightAnalog:
                     switch (button)
                     {
                         case JoyConButton.RAnalogDown:
@@ -236,11 +196,11 @@ namespace XJoy2
                     }
                     break;
 
-                case JoyconRegion.RightAux:
+                case JoyConRegion.RightAux:
                     switch (button)
                     {
                         case JoyConButton.RShoulder:
-                            this.right_buttons |= Xbox360Buttons.RightShoulder;
+                            this.RightButtons |= Xbox360Buttons.RightShoulder;
                             break;
 
                         case JoyConButton.RTrigger:
@@ -249,62 +209,103 @@ namespace XJoy2
 
                         case JoyConButton.RHome:
                         case JoyConButton.RPlus:
-                            this.right_buttons |= Xbox360Buttons.Start;
+                            this.RightButtons |= Xbox360Buttons.Start;
                             break;
 
                         case JoyConButton.RStick:
-                            this.right_buttons |= Xbox360Buttons.RightThumb;
+                            this.RightButtons |= Xbox360Buttons.RightThumb;
                             break;
                     }
                     break;
 
-                case JoyconRegion.RightButtons:
+                case JoyConRegion.RightButtons:
                     switch (button)
                     {
                         case JoyConButton.RButA:
-                            this.right_buttons |= Xbox360Buttons.A;
+                            this.RightButtons |= Xbox360Buttons.A;
                             break;
 
                         case JoyConButton.RButB:
-                            this.right_buttons |= Xbox360Buttons.B;
+                            this.RightButtons |= Xbox360Buttons.B;
                             break;
 
                         case JoyConButton.RButX:
-                            this.right_buttons |= Xbox360Buttons.X;
+                            this.RightButtons |= Xbox360Buttons.X;
                             break;
 
                         case JoyConButton.RButY:
-                            this.right_buttons |= Xbox360Buttons.Y;
+                            this.RightButtons |= Xbox360Buttons.Y;
                             break;
                     }
                     break;
             }
         }
 
-        public void process_buttons(JoyconRegion region, JoyConButton a)
+        private void ProcessData(byte data, JoyConRegion region, JoyConButton button)
         {
-            this.process_button(region, a);
+            if (data.IsButton(button))
+            {
+                this.ProcessButton(region, button);
+            }
         }
 
-        //public void process_buttons(JOYCON_REGION region, JoyConButton a, JoyConButton b)
-        //{
-        //    this.process_button(region, a);
-        //    this.process_button(region, b);
-        //}
+        #endregion Private Methods
 
-        //public void process_buttons(JOYCON_REGION region, JoyConButton a, JoyConButton b, JoyConButton c)
-        //{
-        //    this.process_button(region, a);
-        //    this.process_button(region, b);
-        //    this.process_button(region, c);
-        //}
+        #region Public Methods
 
-        //public void process_buttons(JOYCON_REGION region, JoyConButton a, JoyConButton b, JoyConButton c, JoyConButton d)
-        //{
-        //    this.process_button(region, a);
-        //    this.process_button(region, b);
-        //    this.process_button(region, c);
-        //    this.process_button(region, d);
-        //}
+        // ReSharper disable InconsistentNaming
+
+        private const int MAIN_BUTTONS_INDEX = 1;
+        private const int AUX__BUTTONS_INDEX = 2;
+        private const int ANALOG_STICK_INDEX = 3;
+
+        // ReSharper enable InconsistentNaming
+
+        public void ProcessLeftJoyCon(byte[] data)
+        {
+            this.report.LeftTrigger = 0;
+            this.LeftButtons = 0;
+
+            this.ProcessData(data[MAIN_BUTTONS_INDEX], JoyConRegion.LeftDpad, JoyConButton.LDpadUp);
+            this.ProcessData(data[MAIN_BUTTONS_INDEX], JoyConRegion.LeftDpad, JoyConButton.LDpadDown);
+            this.ProcessData(data[MAIN_BUTTONS_INDEX], JoyConRegion.LeftDpad, JoyConButton.LDpadLeft);
+            this.ProcessData(data[MAIN_BUTTONS_INDEX], JoyConRegion.LeftDpad, JoyConButton.LDpadRight);
+
+            this.ProcessButton(JoyConRegion.LeftAnalog, (JoyConButton)data[ANALOG_STICK_INDEX]);
+
+            this.ProcessData(data[AUX__BUTTONS_INDEX], JoyConRegion.LeftAux, JoyConButton.LTrigger);
+            this.ProcessData(data[AUX__BUTTONS_INDEX], JoyConRegion.LeftAux, JoyConButton.LShoulder);
+            this.ProcessData(data[AUX__BUTTONS_INDEX], JoyConRegion.LeftAux, JoyConButton.LCapture);
+            this.ProcessData(data[AUX__BUTTONS_INDEX], JoyConRegion.LeftAux, JoyConButton.LMinus);
+            this.ProcessData(data[AUX__BUTTONS_INDEX], JoyConRegion.LeftAux, JoyConButton.LStick);
+
+            this.AssignButtons();
+        }
+
+        public void ProcessRightJoyCon(byte[] data)
+        {
+            this.report.RightTrigger = 0;
+            this.RightButtons = 0;
+
+            const JoyConRegion region = JoyConRegion.RightButtons;
+            const JoyConRegion auxRegion = JoyConRegion.RightAux;
+
+            this.ProcessData(data[MAIN_BUTTONS_INDEX], region, JoyConButton.RButA);
+            this.ProcessData(data[MAIN_BUTTONS_INDEX], region, JoyConButton.RButB);
+            this.ProcessData(data[MAIN_BUTTONS_INDEX], region, JoyConButton.RButX);
+            this.ProcessData(data[MAIN_BUTTONS_INDEX], region, JoyConButton.RButY);
+
+            this.ProcessButton(JoyConRegion.RightAnalog, (JoyConButton)data[ANALOG_STICK_INDEX]);
+
+            this.ProcessData(data[AUX__BUTTONS_INDEX], auxRegion, JoyConButton.RTrigger);
+            this.ProcessData(data[AUX__BUTTONS_INDEX], auxRegion, JoyConButton.RShoulder);
+            this.ProcessData(data[AUX__BUTTONS_INDEX], auxRegion, JoyConButton.RHome);
+            this.ProcessData(data[AUX__BUTTONS_INDEX], auxRegion, JoyConButton.RPlus);
+            this.ProcessData(data[AUX__BUTTONS_INDEX], auxRegion, JoyConButton.RStick);
+
+            this.AssignButtons();
+        }
+
+        #endregion Public Methods
     }
 }

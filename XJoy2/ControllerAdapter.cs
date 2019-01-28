@@ -13,19 +13,69 @@ namespace XJoy2
 {
     using static Constants;
 
+    /// <summary>
+    /// Function to handle processing input data from a Joy-Con
+    /// </summary>
+    /// <param name="data">The data.</param>
+    public delegate void ProcessorFunction(byte[] data);
+
     public class ControllerAdapter : IDisposable
     {
-        private static readonly object _locker = new object();
+        #region Private Fields
+
+        private static readonly object Locker = new object();
 
         private static int _registeredPairs = 0;
 
-        private readonly byte[] Data = new byte[DATA_BUFFER_SIZE];
+        private readonly ButtonProcessor _buttonProcessor;
 
+        private readonly ViGEmClient _client;
+
+        /// <summary>
+        /// The data from the Joy-Cons
+        /// </summary>
+        private readonly byte[] _data = new byte[DATA_BUFFER_SIZE];
+
+        private readonly HidDeviceManager _deviceManager;
+
+        private readonly IList<HidDevice> _devices = new List<HidDevice>(2);
+
+        private readonly Thread _leftThread;
+
+        private readonly ILogger _logger;
+
+        private readonly Thread _rightThread;
+
+        private readonly Xbox360Report _xboxReport = new Xbox360Report();
+
+        private Xbox360Controller _xboxController;
+
+        #endregion Private Fields
+
+        public ControllerAdapter(HidDeviceManager manager, ILogger logger)
+        {
+            this._logger = logger;
+            this._deviceManager = manager;
+            this._client = new ViGEmClient();
+            this._buttonProcessor = new ButtonProcessor(logger, this._xboxReport);
+
+            this._leftThread = new Thread(() => this.RunJoyConThread(JoyConSide.Left));
+            this._rightThread = new Thread(() => this.RunJoyConThread(JoyConSide.Right));
+
+            this.PairNumber = RegisteredPairs + 1;
+        }
+
+        #region Public Properties
+
+        /// <summary>
+        /// The total number of registered pairs of Joy-Cons.
+        /// </summary>
+        /// <value>The registered pairs.</value>
         public static int RegisteredPairs
         {
             get
             {
-                lock (_locker)
+                lock (Locker)
                 {
                     return _registeredPairs;
                 }
@@ -33,137 +83,82 @@ namespace XJoy2
 
             private set
             {
-                lock (_locker)
+                lock (Locker)
                 {
                     _registeredPairs = value;
                 }
             }
         }
 
-        public int PairNumber { get; private set; }
-
-        private readonly HidDeviceManager DeviceManager;
-        private readonly ButtonProcessor buttonProcessor;
-
-        private Xbox360Controller XboxController;
-        private readonly Xbox360Report xboxReport = new Xbox360Report();
-
-        private readonly ViGEmClient Client;
-
-        private readonly ILogger Logger;
-
-        private readonly IList<HidDevice> devices = new List<HidDevice>(2);
-
-        private readonly Thread leftThread;
-        private readonly Thread rightThread;
+        public bool IsInitialized { get; private set; }
 
         public bool IsValid { get; private set; }
 
-        public bool CanInitialize()
-        {
-            var available = this.DeviceManager.GetAvailableJoycons().ToList();
+        public int PairNumber { get; }
 
-            var pairs = available.Count / 2.0;
+        #endregion Public Properties
 
-            return available.Count > 0 && available.Count % 2 == 0;
-        }
+        #region Private Methods
 
-        public ControllerAdapter(HidDeviceManager manager, ILogger logger)
-        {
-            this.Logger = logger;
-            this.DeviceManager = manager;
-            this.Client = new ViGEmClient();
-            this.buttonProcessor = new ButtonProcessor(logger, this.xboxReport);
-            this.leftThread = new Thread(() => this.RunJoyConThread(JoyConSide.Left));
-            this.rightThread = new Thread(() => this.RunJoyConThread(JoyConSide.Right));
-            this.PairNumber = RegisteredPairs + 1;
-
-            //this.mutex.SetSafeWaitHandle(new Microsoft.Win32.SafeHandles.SafeWaitHandle())
-        }
-
-        /// <summary>
-        /// Initializes this instance and attempts to pair the joycons.
-        /// </summary>
-        /// <exception cref="DeviceNotFoundException">No joycon was found available to pair</exception>
-        public void Start()
-        {
-            int initialPairs = RegisteredPairs;
-            try
-            {
-                this.InitializeXbox();
-                this.Logger.Info("Initializing controller pair #{num}", this.PairNumber);
-
-                this.leftThread.Start();
-                this.rightThread.Start();
-                RegisteredPairs++;
-            }
-            catch (Exception ex)
-            {
-                this.Logger.Error(ex, "Initialization error");
-                this.IsValid = false;
-                RegisteredPairs = initialPairs;
-                throw;
-            }
-        }
-
-        public void InitializeXbox()
-        {
-            this.Logger.Info("Initializing emulated xbox 360 controller...");
-            try
-            {
-                this.XboxController = new Xbox360Controller(this.Client);
-                this.XboxController.FeedbackReceived += XboxController_FeedbackReceived;
-                this.XboxController.Connect();
-            }
-            catch (Exception ex)
-            {
-                this.Logger.Error(ex, "Connection error");
-
-                throw;
-            }
-        }
-
-        private void XboxController_FeedbackReceived(object sender, Xbox360FeedbackReceivedEventArgs e)
-        {
-            this.Logger.Debug("Xbox input received: {data}", new { e.LargeMotor, e.LedNumber, e.SmallMotor });
-        }
-
-        [NotNull]
-        private HidDevice InitializeSingle(JoyConSide side)
-        {
-            var allDevices = this.DeviceManager.GetJoycons(side);
-            var available = allDevices.Where(a => !Util.RegisteredSerialNumbers.Contains(a.SerialNumber()))
-                .ToList();
-
-            if (available.Any())
-            {
-                this.Logger.Info("Found {side} Joy-Con", side);
-                var device = available[0];
-                device.ConnectAndRemember();
-                Logger.Debug("Connected device: {device}", device);
-                return device;
-            }
-
-            this.Logger.Error("No {side} Joy-Con was found available to pair", side);
-            throw new DeviceNotFoundException($"No {side} Joy-Con was found available to pair");
-        }
-
-        private ProcessorFunction getProcessFunc(JoyConSide side)
+        private ProcessorFunction GetProcessFunc(JoyConSide side)
         {
             switch (side)
             {
-                case JoyConSide.Left: return buttonProcessor.process_left_joycon;
-                case JoyConSide.Right: return buttonProcessor.process_right_joycon;
+                case JoyConSide.Left: return this._buttonProcessor.ProcessLeftJoyCon;
+                case JoyConSide.Right: return this._buttonProcessor.ProcessRightJoyCon;
                 default:
                     throw new InvalidOperationException($"Invalid Joy-Con side: {side}");
             }
         }
 
-        public bool IsInitialized { get; private set; }
+        [NotNull]
+        private HidDevice InitializeSingle(JoyConSide side)
+        {
+            List<HidDevice> available = this._deviceManager
+                                        .GetAvailableJoycons(side)
+                                        .ToList();
 
+            if (available.Count > 0)
+            {
+                this._logger.Info("Found {side} Joy-Con", side);
+                HidDevice device = available[0];
+                device.ConnectAndRemember();
+                this._logger.Debug("Connected device: {device}", device);
+                return device;
+            }
+
+            this._logger.Error("No {side} Joy-Con was found available to pair", side);
+            throw new DeviceNotFoundException($"No {side} Joy-Con was found available to pair");
+        }
+
+        /// <summary>
+        /// Initializes the xbox controller emulation.
+        /// </summary>
+        private void InitializeXbox()
+        {
+            this._logger.Info("Initializing emulated xbox 360 controller...");
+            try
+            {
+                this._xboxController = new Xbox360Controller(this._client);
+                this._xboxController.FeedbackReceived += XboxController_FeedbackReceived;
+                this._xboxController.Connect();
+                this._logger.Debug("Initialized xbox 360 controller");
+            }
+            catch (Exception ex)
+            {
+                this._logger.Error(ex, "Connection error");
+
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Monitors for input for the Joy-Con on the given side, and handles the events.
+        /// </summary>
+        /// <param name="side">The side.</param>
         private void RunJoyConThread(JoyConSide side)
         {
-            Logger.Trace("Running JoyCon Thread for side {side}", side);
+            this._logger.Trace("Running JoyCon Thread for side {side}", side);
 
             try
             {
@@ -172,46 +167,95 @@ namespace XJoy2
                     mutex.WaitOne();
                     HidDevice device = this.InitializeSingle(side);
 
-                    this.devices.Add(device);
+                    this._devices.Add(device);
 
-                    ProcessorFunction processFunc = getProcessFunc(side);
+                    ProcessorFunction processFunc = this.GetProcessFunc(side);
 
-                    Logger.Debug("Pair #{pair} {side} Starting Joy-Con thread", this.PairNumber, side);
+                    this._logger.Debug("Pair #{pair} {side} Starting Joy-Con thread", this.PairNumber, side);
                     IsInitialized = true;
 
                     while (true)
                     {
-                        Logger.Trace("Pair #{pair} {side} thread started", this.PairNumber, side);
+                        this._logger.Trace("Pair #{pair} {side} thread started", this.PairNumber, side);
                         mutex.WaitOne();
 
-                        device.Read(Data, DATA_BUFFER_SIZE);
-                        Logger.Trace("Pair #{pair} {side} Read data", this.PairNumber, side);
+                        device.Read(this._data, DATA_BUFFER_SIZE);
+                        this._logger.Trace("Pair #{pair} {side} data read from Joy-Con", this.PairNumber, side);
 
-                        processFunc(this.Data);
+                        processFunc(this._data);
 
-                        Logger.Trace("Sending report {@report}", this.xboxReport);
-                        this.XboxController.SendReport(this.xboxReport);
+                        this._logger.Trace("Sending report to emulated Xbox controller: {@report}", this._xboxReport);
+                        this._xboxController.SendReport(this._xboxReport);
 
                         mutex.ReleaseMutex();
-                        Logger.Trace("Pair #{pair} {side} Mutex released", this.PairNumber, side);
+                        this._logger.Trace("Pair #{pair} {side} Mutex released", this.PairNumber, side);
                     }
                 }
             }
             catch (Exception ex)
             {
-                this.Logger.Fatal(ex, "An error occurred in the Pair #{pair} {side} thread", this.PairNumber, side);
+                this._logger.Fatal(ex, "An error occurred in the Pair #{pair} {side} thread", this.PairNumber, side);
                 throw;
             }
         }
 
+        private void XboxController_FeedbackReceived(object sender, Xbox360FeedbackReceivedEventArgs e)
+        {
+            this._logger.Debug("Xbox input received: {data}", new { e.LargeMotor, e.LedNumber, e.SmallMotor });
+        }
+
+        #endregion Private Methods
+
+        #region Public Methods
+
+        /// <summary>
+        /// Determines whether two Joy-Cons are available to setup
+        /// </summary>
+        public bool CanInitialize()
+        {
+            List<HidDevice> available = this._deviceManager.GetAvailableJoycons().ToList();
+
+            bool areAtLeastTwo = available.Count % 2 == 0;
+
+            return available.Count > 0 && areAtLeastTwo;
+        }
+
+        /// <summary>
+        /// Initializes this instance and attempts to pair the Joy-Con.
+        /// </summary>
+        /// <exception cref="DeviceNotFoundException">No Joy-Con was found available to pair</exception>
+        public void Start()
+        {
+            int initialPairs = RegisteredPairs;
+            try
+            {
+                this.InitializeXbox();
+                this._logger.Info("Initializing controller pair #{num}", this.PairNumber);
+
+                this._leftThread.Start();
+                this._rightThread.Start();
+                RegisteredPairs++;
+            }
+            catch (Exception ex)
+            {
+                this._logger.Error(ex, "Initialization error");
+                this.IsValid = false;
+                RegisteredPairs = initialPairs;
+                throw;
+            }
+        }
+
+        #endregion Public Methods
+
         #region IDisposable
 
-        private void ReleaseUnmanagedResources()
+        /// <summary>
+        /// Allows an object to try to free resources and perform other cleanup operations before it is reclaimed by
+        /// garbage collection.
+        /// </summary>
+        ~ControllerAdapter()
         {
-            foreach (HidDevice hidDevice in this.devices)
-            {
-                hidDevice.Disconnect();
-            }
+            Dispose(false);
         }
 
         private void Dispose(bool disposing)
@@ -219,8 +263,16 @@ namespace XJoy2
             ReleaseUnmanagedResources();
             if (disposing)
             {
-                this.XboxController?.Dispose();
-                this.Client?.Dispose();
+                this._xboxController?.Dispose();
+                this._client?.Dispose();
+            }
+        }
+
+        private void ReleaseUnmanagedResources()
+        {
+            foreach (HidDevice hidDevice in this._devices)
+            {
+                hidDevice.Disconnect();
             }
         }
 
@@ -233,47 +285,6 @@ namespace XJoy2
             GC.SuppressFinalize(this);
         }
 
-        /// <summary>
-        /// Allows an object to try to free resources and perform other cleanup operations before it is reclaimed by
-        /// garbage collection.
-        /// </summary>
-        ~ControllerAdapter()
-        {
-            Dispose(false);
-        }
-
         #endregion IDisposable
-    }
-
-    public delegate void ProcessorFunction(byte[] data);
-
-    public class ControllerListener
-    {
-        private readonly Mutex mutex;
-        private readonly HidDevice device;
-        private readonly ButtonProcessor buttonProcessor;
-        private readonly JoyConSide side;
-        private readonly Action<byte[]> processFunc;
-
-        private readonly byte[] Data = new byte[DATA_BUFFER_SIZE];
-
-        public ControllerListener(HidDevice device, Mutex mutex, ButtonProcessor buttonProcessor, JoyConSide side)
-        {
-            this.mutex = mutex;
-            this.device = device;
-            this.buttonProcessor = buttonProcessor;
-            this.side = side;
-
-            switch (side)
-            {
-                case JoyConSide.Left:
-                    this.processFunc = buttonProcessor.process_left_joycon;
-                    break;
-
-                case JoyConSide.Right:
-                    this.processFunc = buttonProcessor.process_right_joycon;
-                    break;
-            }
-        }
     }
 }

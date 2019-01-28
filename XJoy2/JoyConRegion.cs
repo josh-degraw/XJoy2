@@ -1,6 +1,6 @@
 ﻿namespace XJoy2
 {
-    public enum JoyconRegion
+    public enum JoyConRegion
     {
         LeftDpad,
         LeftAnalog,

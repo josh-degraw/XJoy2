@@ -24,5 +24,4 @@ Documents folder
    show up as soon as XJoy2.exe starts running (you will hear the USB device inserted sound).
 5. To confirm that it is working, try pressing some buttons on your Joy-Cons. You should
    see the names of the buttons currently being pressed printed in the terminal.
-6. To exit, press [ENTER] in the terminal window. You can also simply close the window
-   however this may not disconnect from the Joy-Cons and the virtual controller properly.
+6. To exit, simply close the window.
