@@ -1,6 +1,4 @@
-﻿using System;
-
-#pragma warning disable RCS1234 // Duplicate enum value.
+﻿#pragma warning disable RCS1234 // Duplicate enum value.
 #pragma warning disable RCS1191 // Declare enum value as combination of names.
 #pragma warning disable RCS1154 // Sort enum members.
 

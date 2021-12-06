@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace XJoy2;
+﻿namespace XJoy2;
 
 internal static class Constants
 {

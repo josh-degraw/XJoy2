@@ -1,21 +1,17 @@
-﻿using Nefarius.ViGEm.Client;
-using Nefarius.ViGEm.Client.Targets;
+﻿using Nefarius.ViGEm.Client.Targets;
 using Nefarius.ViGEm.Client.Targets.Xbox360;
 using NLog;
-using System;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace XJoy2;
 
 using static Constants;
 
-public class ButtonProcessor
+public sealed class ButtonProcessor
 {
-    #region Private Fields
-
     private readonly ILogger Logger;
     private readonly IXbox360Controller controller;
-
-    #endregion Private Fields
 
     public ButtonProcessor(ILogger logger, IXbox360Controller controller)
     {
@@ -23,14 +19,20 @@ public class ButtonProcessor
         this.controller = controller;
     }
 
-
-    private void ProcessButton(JoyConRegion region, JoyConButton button)
+    [Conditional("DEBUG")]
+    private void LogInvalidCondition(JoyConRegion region, JoyConButton button)
     {
         if (!((region == JoyConRegion.LeftAnalog && button == JoyConButton.LAnalogNone)
               || (region == JoyConRegion.RightAnalog && button == JoyConButton.RAnalogNone)))
         {
-            Logger.Debug(region.ToString(button));
+            Logger.Warn(() => region.ToString(button));
         }
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void ProcessButton(JoyConRegion region, JoyConButton button)
+    {
+        LogInvalidCondition(region, button);
 
         // ReSharper disable SwitchStatementMissingSomeCases
         switch (region)
@@ -40,7 +42,6 @@ public class ButtonProcessor
                 {
                     case JoyConButton.LDpadUp:
                         this.controller.SetButtonState(Xbox360Button.Up, true);
-                        //this.LeftButtons |= Xbox360Buttons.Up;
                         break;
 
                     case JoyConButton.LDpadDown:
@@ -226,6 +227,7 @@ public class ButtonProcessor
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ProcessData(byte data, JoyConRegion region, JoyConButton button)
     {
         if (data.IsButton(button))
@@ -243,17 +245,17 @@ public class ButtonProcessor
     // ReSharper enable InconsistentNaming
 
 
-    public JoyConProccessFunc GetProccessFunc(JoyConSide side)
+    public ProcessorFunction GetProccessFunc(JoyConSide side)
+    => side switch
     {
-        return side switch
-        {
-            JoyConSide.Left => ProcessLeftJoyCon,
-            JoyConSide.Right => ProcessRightJoyCon,
-            _ => throw new ArgumentOutOfRangeException(nameof(side)),
-        };
-    }
+        JoyConSide.Left => ProcessLeftJoyCon,
+        JoyConSide.Right => ProcessRightJoyCon,
+        _ => throw new ArgumentOutOfRangeException(nameof(side)),
+    };
 
-    public void ProcessLeftJoyCon(byte[] data)
+
+
+    private void ProcessLeftJoyCon(byte[] data)
     {
         this.controller.ResetReport();
 
@@ -271,7 +273,7 @@ public class ButtonProcessor
         this.ProcessData(data[AUX__BUTTONS_INDEX], JoyConRegion.LeftAux, JoyConButton.LStick);
     }
 
-    public void ProcessRightJoyCon(byte[] data)
+    private void ProcessRightJoyCon(byte[] data)
     {
         this.controller.ResetReport();
 
@@ -294,4 +296,3 @@ public class ButtonProcessor
 
 }
 
-public delegate void JoyConProccessFunc(byte[] data);

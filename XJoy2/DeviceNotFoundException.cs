@@ -1,7 +1,4 @@
-﻿using System;
-using System.Runtime.Serialization;
-
-namespace XJoy2;
+﻿namespace XJoy2;
 
 [Serializable]
 public class DeviceNotFoundException : Exception

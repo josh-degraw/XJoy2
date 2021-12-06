@@ -1,8 +1,6 @@
 ﻿using HidApiAdapter;
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace XJoy2;
 
@@ -14,7 +12,7 @@ public static partial class Util
 
     public static IList<HidDevice> GetJoycons(this HidDeviceManager manager, JoyConSide side)
     {
-        var devices = manager.SearchDevices(NINTENDO, (int)side);
+        List<HidDevice>? devices = manager.SearchDevices(NINTENDO, (int)side);
 
         if (devices is null)
         {
@@ -34,105 +32,88 @@ public static partial class Util
         RegisteredSerialNumbers.Add(device.SerialNumber());
     }
 
-    public static IEnumerable<HidDevice> GetJoycons(this HidDeviceManager manager)
-    {
-        return manager.GetJoycons(JoyConSide.Left).Concat(manager.GetJoycons(JoyConSide.Right));
-    }
+    public static IEnumerable<HidDevice> GetJoycons(this HidDeviceManager manager) => manager.GetJoycons(JoyConSide.Left).Concat(manager.GetJoycons(JoyConSide.Right));
 
-    public static bool IsAvailable(this HidDevice device)
-    {
-        return !RegisteredSerialNumbers.Contains(device.SerialNumber());
-    }
+    public static bool IsAvailable(this HidDevice device) => !RegisteredSerialNumbers.Contains(device.SerialNumber());
 
-    public static IEnumerable<HidDevice> GetAvailableJoycons(this HidDeviceManager manager)
-    {
-        return manager.GetJoycons().Where(IsAvailable);
-    }
+    public static IEnumerable<HidDevice> GetAvailableJoycons(this HidDeviceManager manager) => manager.GetJoycons().Where(IsAvailable);
 
-    public static IEnumerable<HidDevice> GetAvailableJoycons(this HidDeviceManager manager, JoyConSide side)
-    {
-        return manager.GetJoycons(side).Where(IsAvailable);
-    }
+    public static IEnumerable<HidDevice> GetAvailableJoycons(this HidDeviceManager manager, JoyConSide side) => manager.GetJoycons(side).Where(IsAvailable);
 
     public static string ToString(this JoyConRegion region, JoyConButton button)
     {
-        switch (region)
+        return region switch
         {
-            case JoyConRegion.LeftDpad:
-                switch (button)
-                {
-                    case JoyConButton.LDpadLeft: return "L_DPAD_LEFT";
-                    case JoyConButton.LDpadDown: return "L_DPAD_DOWN";
-                    case JoyConButton.LDpadUp: return "L_DPAD_UP";
-                    case JoyConButton.LDpadRight: return "L_DPAD_RIGHT";
-                }
-                break;
-            case JoyConRegion.LeftAnalog:
-                switch (button)
-                {
-                    case JoyConButton.LAnalogLeft: return "L_ANALOG_LEFT";
-                    case JoyConButton.LAnalogUpLeft: return "L_ANALOG_UP_LEFT";
-                    case JoyConButton.LAnalogUp: return "L_ANALOG_UP";
-                    case JoyConButton.LAnalogUpRight: return "L_ANALOG_UP_RIGHT";
-                    case JoyConButton.LAnalogRight: return "L_ANALOG_RIGHT";
-                    case JoyConButton.LAnalogDownRight: return "L_ANALOG_DOWN_RIGHT";
-                    case JoyConButton.LAnalogDown: return "L_ANALOG_DOWN";
-                    case JoyConButton.LAnalogDownLeft: return "L_ANALOG_DOWN_LEFT";
-                    case JoyConButton.LAnalogNone: return "L_ANALOG_NONE";
-                }
-                break;
-            case JoyConRegion.LeftAux:
-                switch (button)
-                {
-                    case JoyConButton.LShoulder: return "L_SHOULDER";
-                    case JoyConButton.LTrigger: return "L_TRIGGER";
-                    case JoyConButton.LCapture: return "L_CAPTURE";
-                    case JoyConButton.LMinus: return "L_MINUS";
-                    case JoyConButton.LStick: return "L_STICK";
-                }
-                break;
-            case JoyConRegion.RightButtons:
-                switch (button)
-                {
-                    case JoyConButton.RButA: return "R_BUT_A";
-                    case JoyConButton.RButB: return "R_BUT_B";
-                    case JoyConButton.RButY: return "R_BUT_Y";
-                    case JoyConButton.RButX: return "R_BUT_X";
-                }
-                break;
-            case JoyConRegion.RightAux:
-                switch (button)
-                {
-                    case JoyConButton.RShoulder: return "R_SHOULDER";
-                    case JoyConButton.RTrigger: return "R_TRIGGER";
-                    case JoyConButton.RHome: return "R_HOME";
-                    case JoyConButton.RPlus: return "R_PLUS";
-                    case JoyConButton.RStick: return "R_STICK";
-                }
-                break;
-            case JoyConRegion.RightAnalog:
-                switch (button)
-                {
-                    case JoyConButton.RAnalogLeft: return "R_ANALOG_LEFT";
-                    case JoyConButton.RAnalogUpLeft: return "R_ANALOG_UP_LEFT";
-                    case JoyConButton.RAnalogUp: return "R_ANALOG_UP";
-                    case JoyConButton.RAnalogUpRight: return "R_ANALOG_UP_RIGHT";
-                    case JoyConButton.RAnalogRight: return "R_ANALOG_RIGHT";
-                    case JoyConButton.RAnalogDownRight: return "R_ANALOG_DOWN_RIGHT";
-                    case JoyConButton.RAnalogDown: return "R_ANALOG_DOWN";
-                    case JoyConButton.RAnalogDownLeft: return "R_ANALOG_DOWN_LEFT";
-                    case JoyConButton.RAnalogNone: return "R_ANALOG_NONE";
-                }
-                break;
-            default:
-                throw new InvalidOperationException("Invalid Region");
-        }
+            JoyConRegion.LeftDpad => button switch
+            {
+                JoyConButton.LDpadLeft => "L_DPAD_LEFT",
+                JoyConButton.LDpadDown => "L_DPAD_DOWN",
+                JoyConButton.LDpadUp => "L_DPAD_UP",
+                JoyConButton.LDpadRight => "L_DPAD_RIGHT",
+                _ => throw new InvalidOperationException("Button in unexpected region"),
+            },
+            JoyConRegion.LeftAnalog => button switch
+            {
+                JoyConButton.LAnalogLeft => "L_ANALOG_LEFT",
+                JoyConButton.LAnalogUpLeft => "L_ANALOG_UP_LEFT",
+                JoyConButton.LAnalogUp => "L_ANALOG_UP",
+                JoyConButton.LAnalogUpRight => "L_ANALOG_UP_RIGHT",
+                JoyConButton.LAnalogRight => "L_ANALOG_RIGHT",
+                JoyConButton.LAnalogDownRight => "L_ANALOG_DOWN_RIGHT",
+                JoyConButton.LAnalogDown => "L_ANALOG_DOWN",
+                JoyConButton.LAnalogDownLeft => "L_ANALOG_DOWN_LEFT",
+                JoyConButton.LAnalogNone => "L_ANALOG_NONE",
+                _ => throw new InvalidOperationException("Button in unexpected region"),
+            },
+            JoyConRegion.LeftAux => button switch
+            {
+                JoyConButton.LShoulder => "L_SHOULDER",
+                JoyConButton.LTrigger => "L_TRIGGER",
+                JoyConButton.LCapture => "L_CAPTURE",
+                JoyConButton.LMinus => "L_MINUS",
+                JoyConButton.LStick => "L_STICK",
+                _ => throw new InvalidOperationException("Button in unexpected region"),
+            },
+            JoyConRegion.RightButtons => button switch
+            {
+                JoyConButton.RButA => "R_BUT_A",
+                JoyConButton.RButB => "R_BUT_B",
+                JoyConButton.RButY => "R_BUT_Y",
+                JoyConButton.RButX => "R_BUT_X",
+                _ => throw new InvalidOperationException("Button in unexpected region"),
+            },
+            JoyConRegion.RightAux => button switch
+            {
+                JoyConButton.RShoulder => "R_SHOULDER",
+                JoyConButton.RTrigger => "R_TRIGGER",
+                JoyConButton.RHome => "R_HOME",
+                JoyConButton.RPlus => "R_PLUS",
+                JoyConButton.RStick => "R_STICK",
+                _ => throw new InvalidOperationException("Button in unexpected region"),
+            },
+            JoyConRegion.RightAnalog => button switch
+            {
+                JoyConButton.RAnalogLeft => "R_ANALOG_LEFT",
+                JoyConButton.RAnalogUpLeft => "R_ANALOG_UP_LEFT",
+                JoyConButton.RAnalogUp => "R_ANALOG_UP",
+                JoyConButton.RAnalogUpRight => "R_ANALOG_UP_RIGHT",
+                JoyConButton.RAnalogRight => "R_ANALOG_RIGHT",
+                JoyConButton.RAnalogDownRight => "R_ANALOG_DOWN_RIGHT",
+                JoyConButton.RAnalogDown => "R_ANALOG_DOWN",
+                JoyConButton.RAnalogDownLeft => "R_ANALOG_DOWN_LEFT",
+                JoyConButton.RAnalogNone => "R_ANALOG_NONE",
+                _ => throw new InvalidOperationException("Button in unexpected region"),
+            },
+            _ => throw new InvalidOperationException("Invalid Region"),
+        };
+
         throw new InvalidOperationException("Invalid Button");
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsButton(this byte data, JoyConButton button)
     {
-        var pushedButton = (JoyConButton)data;
+        JoyConButton pushedButton = (JoyConButton)data;
         return (pushedButton & button) == button;
     }
 

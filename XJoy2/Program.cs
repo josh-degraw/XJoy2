@@ -1,31 +1,31 @@
 ﻿using HidApiAdapter;
 using NLog;
-using System;
-using System.Collections.Generic;
-using System.Threading;
 
 namespace XJoy2;
 
-public class Program : IDisposable
+public class Program
 {
-    private static readonly Lazy<ILogger> _logger = new Lazy<ILogger>(LogManager.GetCurrentClassLogger);
+    private static async Task Main()
+    {
+        using var program = new XJoyRunner();
+        await program.RunAsync();
+    }
+}
+
+public sealed class XJoyRunner : IDisposable
+{
+    private static readonly Lazy<ILogger> _logger = new(LogManager.GetCurrentClassLogger);
 
     private static ILogger Logger => _logger.Value;
 
-    private static void Main()
-    {
-        Logger.Info("Starting program");
-        using (var program = new Program())
-        {
-            program.Run();
-        }
-    }
+    private readonly List<IDisposable> _adapters = new(2);
+    
+    // Limit to one running process at a time
+    private const string MUTEX_NAME = "XJoy.Runner.Mutex";
 
-    private readonly List<IDisposable> _adapters = new List<IDisposable>(2);
-
-    public void Run()
+    public async Task RunAsync()
     {
-        var mut = new Mutex();
+        using var mut = new Mutex(true, MUTEX_NAME);
         try
         {
             HidDeviceManager manager = HidDeviceManager.GetManager();
@@ -43,7 +43,7 @@ public class Program : IDisposable
                 // Wait for the first pair to be set up before trying another one
                 while (!adapter.IsInitialized)
                 {
-                    Thread.Sleep(500);
+                    await Task.Delay(500);
                 }
             }
             mut.WaitOne();
@@ -53,9 +53,6 @@ public class Program : IDisposable
             Logger.Fatal(ex, "Unexpected error.");
         }
     }
-
-    #region IDisposable
-
     /// <summary>
     /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
     /// </summary>
@@ -66,5 +63,4 @@ public class Program : IDisposable
             adapter.Dispose();
         }
     }
-    #endregion IDisposable
 }
