@@ -1,5 +1,8 @@
-﻿using Nefarius.ViGEm.Client.Targets.Xbox360;
+﻿using Nefarius.ViGEm.Client;
+using Nefarius.ViGEm.Client.Targets;
+using Nefarius.ViGEm.Client.Targets.Xbox360;
 using NLog;
+using System;
 
 namespace XJoy2
 {
@@ -10,37 +13,16 @@ namespace XJoy2
         #region Private Fields
 
         private readonly ILogger Logger;
-        private readonly Xbox360Report report;
+        private readonly IXbox360Controller controller;
 
         #endregion Private Fields
 
-        public ButtonProcessor(ILogger logger, Xbox360Report report)
+        public ButtonProcessor(ILogger logger, IXbox360Controller controller)
         {
             this.Logger = logger;
-            this.report = report;
+            this.controller = controller;
         }
 
-        #region Public Properties
-
-        /// <summary>
-        /// The buttons pressed on the left Joy-Con
-        /// </summary>
-        public Xbox360Buttons LeftButtons { get; private set; }
-
-        /// <summary>
-        /// The buttons pressed on the right Joy-Con
-        /// </summary>
-        public Xbox360Buttons RightButtons { get; private set; }
-
-        #endregion Public Properties
-
-        #region Private Methods
-
-        private void AssignButtons()
-        {
-            Xbox360Buttons buttons = this.RightButtons | this.LeftButtons;
-            this.report.Buttons = (ushort)buttons;
-        }
 
         private void ProcessButton(JoyConRegion region, JoyConButton button)
         {
@@ -57,19 +39,20 @@ namespace XJoy2
                     switch (button)
                     {
                         case JoyConButton.LDpadUp:
-                            this.LeftButtons |= Xbox360Buttons.Up;
+                            this.controller.SetButtonState(Xbox360Button.Up, true);
+                            //this.LeftButtons |= Xbox360Buttons.Up;
                             break;
 
                         case JoyConButton.LDpadDown:
-                            this.LeftButtons |= Xbox360Buttons.Down;
+                            this.controller.SetButtonState(Xbox360Button.Down, true);
                             break;
 
                         case JoyConButton.LDpadLeft:
-                            this.LeftButtons |= Xbox360Buttons.Left;
+                            this.controller.SetButtonState(Xbox360Button.Left, true);
                             break;
 
                         case JoyConButton.LDpadRight:
-                            this.LeftButtons |= Xbox360Buttons.Right;
+                            this.controller.SetButtonState(Xbox360Button.Right, true);
                             break;
                     }
                     break;
@@ -78,48 +61,49 @@ namespace XJoy2
                     switch (button)
                     {
                         case JoyConButton.LAnalogDown:
-                            this.report.LeftThumbX = 0;
-                            this.report.LeftThumbY = XBOX_ANALOG_MIN;
+                            this.controller.SetAxisValue(Xbox360Axis.LeftThumbX, 0);
+                            this.controller.SetAxisValue(Xbox360Axis.LeftThumbY, XBOX_ANALOG_MIN);
+
                             break;
 
                         case JoyConButton.LAnalogUp:
-                            this.report.LeftThumbX = 0;
-                            this.report.LeftThumbY = XBOX_ANALOG_MAX;
+                            this.controller.SetAxisValue(Xbox360Axis.LeftThumbX, 0);
+                            this.controller.SetAxisValue(Xbox360Axis.LeftThumbY, XBOX_ANALOG_MAX);
                             break;
 
                         case JoyConButton.LAnalogLeft:
-                            this.report.LeftThumbX = XBOX_ANALOG_MIN;
-                            this.report.LeftThumbY = 0;
+                            this.controller.SetAxisValue(Xbox360Axis.LeftThumbX, XBOX_ANALOG_MIN);
+                            this.controller.SetAxisValue(Xbox360Axis.LeftThumbY, 0);
                             break;
 
                         case JoyConButton.LAnalogRight:
-                            this.report.LeftThumbX = XBOX_ANALOG_MAX;
-                            this.report.LeftThumbY = 0;
+                            this.controller.SetAxisValue(Xbox360Axis.LeftThumbX, XBOX_ANALOG_MAX);
+                            this.controller.SetAxisValue(Xbox360Axis.LeftThumbY, 0);
                             break;
 
                         case JoyConButton.LAnalogDownLeft:
-                            this.report.LeftThumbX = XBOX_ANALOG_DIAG_MIN;
-                            this.report.LeftThumbY = XBOX_ANALOG_DIAG_MIN;
+                            this.controller.SetAxisValue(Xbox360Axis.LeftThumbX, XBOX_ANALOG_DIAG_MIN);
+                            this.controller.SetAxisValue(Xbox360Axis.LeftThumbY, XBOX_ANALOG_DIAG_MIN);
                             break;
 
                         case JoyConButton.LAnalogDownRight:
-                            this.report.LeftThumbX = XBOX_ANALOG_DIAG_MAX;
-                            this.report.LeftThumbY = XBOX_ANALOG_DIAG_MIN;
+                            this.controller.SetAxisValue(Xbox360Axis.LeftThumbX, XBOX_ANALOG_DIAG_MAX);
+                            this.controller.SetAxisValue(Xbox360Axis.LeftThumbY, XBOX_ANALOG_DIAG_MIN);
                             break;
 
                         case JoyConButton.LAnalogUpLeft:
-                            this.report.LeftThumbX = XBOX_ANALOG_DIAG_MIN;
-                            this.report.LeftThumbY = XBOX_ANALOG_DIAG_MAX;
+                            this.controller.SetAxisValue(Xbox360Axis.LeftThumbX, XBOX_ANALOG_DIAG_MIN);
+                            this.controller.SetAxisValue(Xbox360Axis.LeftThumbY, XBOX_ANALOG_DIAG_MAX);
                             break;
 
                         case JoyConButton.LAnalogUpRight:
-                            this.report.LeftThumbX = XBOX_ANALOG_DIAG_MAX;
-                            this.report.LeftThumbY = XBOX_ANALOG_DIAG_MAX;
+                            this.controller.SetAxisValue(Xbox360Axis.LeftThumbX, XBOX_ANALOG_DIAG_MAX);
+                            this.controller.SetAxisValue(Xbox360Axis.LeftThumbY, XBOX_ANALOG_DIAG_MAX);
                             break;
 
                         case JoyConButton.LAnalogNone:
-                            this.report.LeftThumbX = 0;
-                            this.report.LeftThumbY = 0;
+                            this.controller.SetAxisValue(Xbox360Axis.LeftThumbX, 0);
+                            this.controller.SetAxisValue(Xbox360Axis.LeftThumbY, 0);
                             break;
                     }
                     break;
@@ -128,70 +112,71 @@ namespace XJoy2
                     switch (button)
                     {
                         case JoyConButton.LShoulder:
-                            this.LeftButtons |= Xbox360Buttons.LeftShoulder;
+                            this.controller.SetButtonState(Xbox360Button.LeftShoulder, true);
                             break;
 
                         case JoyConButton.LTrigger:
-                            this.report.LeftTrigger = TRIGGER_PRESS;
+                            this.controller.SetSliderValue(Xbox360Slider.LeftTrigger, TRIGGER_PRESS);
                             break;
 
                         case JoyConButton.LCapture:
                         case JoyConButton.LMinus:
-                            this.LeftButtons |= Xbox360Buttons.Back;
+                            this.controller.SetButtonState(Xbox360Button.Back, true);
                             break;
 
                         case JoyConButton.LStick:
-                            this.LeftButtons |= Xbox360Buttons.LeftThumb;
+                            this.controller.SetButtonState(Xbox360Button.LeftThumb, true);
                             break;
                     }
                     break;
+
 
                 case JoyConRegion.RightAnalog:
                     switch (button)
                     {
                         case JoyConButton.RAnalogDown:
-                            this.report.RightThumbX = 0;
-                            this.report.RightThumbY = XBOX_ANALOG_MIN;
+                            this.controller.SetAxisValue(Xbox360Axis.RightThumbX, 0);
+                            this.controller.SetAxisValue(Xbox360Axis.RightThumbY, XBOX_ANALOG_MIN);
                             break;
 
                         case JoyConButton.RAnalogUp:
-                            this.report.RightThumbX = 0;
-                            this.report.RightThumbY = XBOX_ANALOG_MAX;
+                            this.controller.SetAxisValue(Xbox360Axis.RightThumbX, 0);
+                            this.controller.SetAxisValue(Xbox360Axis.RightThumbY, XBOX_ANALOG_MAX);
                             break;
 
                         case JoyConButton.RAnalogLeft:
-                            this.report.RightThumbX = XBOX_ANALOG_MIN;
-                            this.report.RightThumbY = 0;
+                            this.controller.SetAxisValue(Xbox360Axis.RightThumbX, XBOX_ANALOG_MIN);
+                            this.controller.SetAxisValue(Xbox360Axis.RightThumbY, 0);
                             break;
 
                         case JoyConButton.RAnalogRight:
-                            this.report.RightThumbX = XBOX_ANALOG_MAX;
-                            this.report.RightThumbY = 0;
+                            this.controller.SetAxisValue(Xbox360Axis.RightThumbX, XBOX_ANALOG_MAX);
+                            this.controller.SetAxisValue(Xbox360Axis.RightThumbY, 0);
                             break;
 
                         case JoyConButton.RAnalogDownLeft:
-                            this.report.RightThumbX = XBOX_ANALOG_DIAG_MIN;
-                            this.report.RightThumbY = XBOX_ANALOG_DIAG_MIN;
+                            this.controller.SetAxisValue(Xbox360Axis.RightThumbX, XBOX_ANALOG_DIAG_MIN);
+                            this.controller.SetAxisValue(Xbox360Axis.RightThumbY, XBOX_ANALOG_DIAG_MIN);
                             break;
 
                         case JoyConButton.RAnalogDownRight:
-                            this.report.RightThumbX = XBOX_ANALOG_DIAG_MAX;
-                            this.report.RightThumbY = XBOX_ANALOG_DIAG_MIN;
+                            this.controller.SetAxisValue(Xbox360Axis.RightThumbX, XBOX_ANALOG_DIAG_MAX);
+                            this.controller.SetAxisValue(Xbox360Axis.RightThumbY, XBOX_ANALOG_DIAG_MIN);
                             break;
 
                         case JoyConButton.RAnalogUpLeft:
-                            this.report.RightThumbX = XBOX_ANALOG_DIAG_MIN;
-                            this.report.RightThumbY = XBOX_ANALOG_DIAG_MAX;
+                            this.controller.SetAxisValue(Xbox360Axis.RightThumbX, XBOX_ANALOG_DIAG_MIN);
+                            this.controller.SetAxisValue(Xbox360Axis.RightThumbY, XBOX_ANALOG_DIAG_MAX);
                             break;
 
                         case JoyConButton.RAnalogUpRight:
-                            this.report.RightThumbX = XBOX_ANALOG_DIAG_MAX;
-                            this.report.RightThumbY = XBOX_ANALOG_DIAG_MAX;
+                            this.controller.SetAxisValue(Xbox360Axis.RightThumbX, XBOX_ANALOG_DIAG_MAX);
+                            this.controller.SetAxisValue(Xbox360Axis.RightThumbY, XBOX_ANALOG_DIAG_MAX);
                             break;
 
                         case JoyConButton.RAnalogNone:
-                            this.report.RightThumbX = 0;
-                            this.report.RightThumbY = 0;
+                            this.controller.SetAxisValue(Xbox360Axis.RightThumbX, 0);
+                            this.controller.SetAxisValue(Xbox360Axis.RightThumbY, 0);
                             break;
                     }
                     break;
@@ -200,20 +185,20 @@ namespace XJoy2
                     switch (button)
                     {
                         case JoyConButton.RShoulder:
-                            this.RightButtons |= Xbox360Buttons.RightShoulder;
+                            this.controller.SetButtonState(Xbox360Button.RightShoulder, true);
                             break;
 
                         case JoyConButton.RTrigger:
-                            this.report.RightTrigger = TRIGGER_PRESS;
+                            this.controller.SetSliderValue(Xbox360Slider.RightTrigger, TRIGGER_PRESS);
                             break;
 
                         case JoyConButton.RHome:
                         case JoyConButton.RPlus:
-                            this.RightButtons |= Xbox360Buttons.Start;
+                            this.controller.SetButtonState(Xbox360Button.Start, true);
                             break;
 
                         case JoyConButton.RStick:
-                            this.RightButtons |= Xbox360Buttons.RightThumb;
+                            this.controller.SetButtonState(Xbox360Button.RightThumb, true);
                             break;
                     }
                     break;
@@ -222,19 +207,19 @@ namespace XJoy2
                     switch (button)
                     {
                         case JoyConButton.RButA:
-                            this.RightButtons |= Xbox360Buttons.A;
+                            this.controller.SetButtonState(Xbox360Button.A, true);
                             break;
 
                         case JoyConButton.RButB:
-                            this.RightButtons |= Xbox360Buttons.B;
+                            this.controller.SetButtonState(Xbox360Button.B, true);
                             break;
 
                         case JoyConButton.RButX:
-                            this.RightButtons |= Xbox360Buttons.X;
+                            this.controller.SetButtonState(Xbox360Button.X, true);
                             break;
 
                         case JoyConButton.RButY:
-                            this.RightButtons |= Xbox360Buttons.Y;
+                            this.controller.SetButtonState(Xbox360Button.Y, true);
                             break;
                     }
                     break;
@@ -249,10 +234,6 @@ namespace XJoy2
             }
         }
 
-        #endregion Private Methods
-
-        #region Public Methods
-
         // ReSharper disable InconsistentNaming
 
         private const int MAIN_BUTTONS_INDEX = 1;
@@ -261,10 +242,20 @@ namespace XJoy2
 
         // ReSharper enable InconsistentNaming
 
+
+        public JoyConProccessFunc GetProccessFunc(JoyConSide side)
+        {
+            return side switch
+            {
+                JoyConSide.Left => ProcessLeftJoyCon,
+                JoyConSide.Right => ProcessRightJoyCon,
+                _ => throw new ArgumentOutOfRangeException(nameof(side)),
+            };
+        }
+
         public void ProcessLeftJoyCon(byte[] data)
         {
-            this.report.LeftTrigger = 0;
-            this.LeftButtons = 0;
+            this.controller.ResetReport();
 
             this.ProcessData(data[MAIN_BUTTONS_INDEX], JoyConRegion.LeftDpad, JoyConButton.LDpadUp);
             this.ProcessData(data[MAIN_BUTTONS_INDEX], JoyConRegion.LeftDpad, JoyConButton.LDpadDown);
@@ -278,14 +269,11 @@ namespace XJoy2
             this.ProcessData(data[AUX__BUTTONS_INDEX], JoyConRegion.LeftAux, JoyConButton.LCapture);
             this.ProcessData(data[AUX__BUTTONS_INDEX], JoyConRegion.LeftAux, JoyConButton.LMinus);
             this.ProcessData(data[AUX__BUTTONS_INDEX], JoyConRegion.LeftAux, JoyConButton.LStick);
-
-            this.AssignButtons();
         }
 
         public void ProcessRightJoyCon(byte[] data)
         {
-            this.report.RightTrigger = 0;
-            this.RightButtons = 0;
+            this.controller.ResetReport();
 
             const JoyConRegion region = JoyConRegion.RightButtons;
             const JoyConRegion auxRegion = JoyConRegion.RightAux;
@@ -302,10 +290,9 @@ namespace XJoy2
             this.ProcessData(data[AUX__BUTTONS_INDEX], auxRegion, JoyConButton.RHome);
             this.ProcessData(data[AUX__BUTTONS_INDEX], auxRegion, JoyConButton.RPlus);
             this.ProcessData(data[AUX__BUTTONS_INDEX], auxRegion, JoyConButton.RStick);
-
-            this.AssignButtons();
         }
 
-        #endregion Public Methods
     }
+
+    public delegate void JoyConProccessFunc(byte[] data);
 }

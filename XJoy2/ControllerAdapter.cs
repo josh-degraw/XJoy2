@@ -45,10 +45,7 @@ namespace XJoy2
         private readonly ILogger _logger;
 
         private readonly Thread _rightThread;
-
-        private readonly Xbox360Report _xboxReport = new Xbox360Report();
-
-        private Xbox360Controller _xboxController;
+        private readonly IXbox360Controller _xboxController;
 
         #endregion Private Fields
 
@@ -57,7 +54,9 @@ namespace XJoy2
             this._logger = logger;
             this._deviceManager = manager;
             this._client = new ViGEmClient();
-            this._buttonProcessor = new ButtonProcessor(logger, this._xboxReport);
+       
+            this._xboxController = this._client.CreateXbox360Controller();
+            this._buttonProcessor = new ButtonProcessor(logger, _xboxController);
 
             this._leftThread = new Thread(() => this.RunJoyConThread(JoyConSide.Left));
             this._rightThread = new Thread(() => this.RunJoyConThread(JoyConSide.Right));
@@ -139,7 +138,6 @@ namespace XJoy2
             this._logger.Info("Initializing emulated xbox 360 controller...");
             try
             {
-                this._xboxController = new Xbox360Controller(this._client);
                 this._xboxController.FeedbackReceived += XboxController_FeedbackReceived;
                 this._xboxController.Connect();
                 this._logger.Debug("Initialized xbox 360 controller");
@@ -184,8 +182,9 @@ namespace XJoy2
 
                         processFunc(this._data);
 
-                        this._logger.Trace("Sending report to emulated Xbox controller: {@report}", this._xboxReport);
-                        this._xboxController.SendReport(this._xboxReport);
+                        this._logger.Trace("Sending report to emulated Xbox controller");
+
+                        this._xboxController.SubmitReport();
 
                         mutex.ReleaseMutex();
                         this._logger.Trace("Pair #{pair} {side} Mutex released", this.PairNumber, side);
@@ -249,6 +248,8 @@ namespace XJoy2
 
         #region IDisposable
 
+        private bool _hasDisposed = false;
+
         /// <summary>
         /// Allows an object to try to free resources and perform other cleanup operations before it is reclaimed by
         /// garbage collection.
@@ -258,13 +259,17 @@ namespace XJoy2
             Dispose(false);
         }
 
+
         private void Dispose(bool disposing)
         {
+            if (_hasDisposed)
+                return;
+
             ReleaseUnmanagedResources();
             if (disposing)
             {
-                this._xboxController?.Dispose();
                 this._client?.Dispose();
+                ((IDisposable) this._xboxController).Dispose();
             }
         }
 
