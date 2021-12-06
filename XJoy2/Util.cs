@@ -116,5 +116,4 @@ public static partial class Util
         JoyConButton pushedButton = (JoyConButton)data;
         return (pushedButton & button) == button;
     }
-
 }

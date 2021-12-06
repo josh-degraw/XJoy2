@@ -1,9 +1,14 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28010.2016
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XJoy2", "XJoy2\XJoy2.csproj", "{6FD0D1D1-3D02-46FD-AC63-ACE8C1A06CBB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XJoy2", "XJoy2\XJoy2.csproj", "{6FD0D1D1-3D02-46FD-AC63-ACE8C1A06CBB}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{9BAC3DAB-1719-4EDB-8479-94592047EC4F}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

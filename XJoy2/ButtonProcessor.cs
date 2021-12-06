@@ -25,11 +25,10 @@ public sealed class ButtonProcessor
         if (!((region == JoyConRegion.LeftAnalog && button == JoyConButton.LAnalogNone)
               || (region == JoyConRegion.RightAnalog && button == JoyConButton.RAnalogNone)))
         {
-            Logger.Warn(() => region.ToString(button));
+            Logger.Warn(region.ToString(button));
         }
     }
-    
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
     private void ProcessButton(JoyConRegion region, JoyConButton button)
     {
         LogInvalidCondition(region, button);
@@ -64,7 +63,6 @@ public sealed class ButtonProcessor
                     case JoyConButton.LAnalogDown:
                         this.controller.SetAxisValue(Xbox360Axis.LeftThumbX, 0);
                         this.controller.SetAxisValue(Xbox360Axis.LeftThumbY, XBOX_ANALOG_MIN);
-
                         break;
 
                     case JoyConButton.LAnalogUp:
@@ -130,7 +128,6 @@ public sealed class ButtonProcessor
                         break;
                 }
                 break;
-
 
             case JoyConRegion.RightAnalog:
                 switch (button)
@@ -244,36 +241,34 @@ public sealed class ButtonProcessor
 
     // ReSharper enable InconsistentNaming
 
-
-    public ProcessorFunction GetProccessFunc(JoyConSide side)
-    => side switch
+    public ProcessorFunction GetProcessor(JoyConSide side) => side switch
     {
         JoyConSide.Left => ProcessLeftJoyCon,
         JoyConSide.Right => ProcessRightJoyCon,
         _ => throw new ArgumentOutOfRangeException(nameof(side)),
     };
 
-
-
-    private void ProcessLeftJoyCon(byte[] data)
+    private void ProcessLeftJoyCon(ReadOnlySpan<byte> data)
     {
         this.controller.ResetReport();
+        const JoyConRegion region = JoyConRegion.LeftDpad;
+        const JoyConRegion auxRegion = JoyConRegion.LeftAux;
 
-        this.ProcessData(data[MAIN_BUTTONS_INDEX], JoyConRegion.LeftDpad, JoyConButton.LDpadUp);
-        this.ProcessData(data[MAIN_BUTTONS_INDEX], JoyConRegion.LeftDpad, JoyConButton.LDpadDown);
-        this.ProcessData(data[MAIN_BUTTONS_INDEX], JoyConRegion.LeftDpad, JoyConButton.LDpadLeft);
-        this.ProcessData(data[MAIN_BUTTONS_INDEX], JoyConRegion.LeftDpad, JoyConButton.LDpadRight);
+        this.ProcessData(data[MAIN_BUTTONS_INDEX], region, JoyConButton.LDpadUp);
+        this.ProcessData(data[MAIN_BUTTONS_INDEX], region, JoyConButton.LDpadDown);
+        this.ProcessData(data[MAIN_BUTTONS_INDEX], region, JoyConButton.LDpadLeft);
+        this.ProcessData(data[MAIN_BUTTONS_INDEX], region, JoyConButton.LDpadRight);
 
         this.ProcessButton(JoyConRegion.LeftAnalog, (JoyConButton)data[ANALOG_STICK_INDEX]);
 
-        this.ProcessData(data[AUX__BUTTONS_INDEX], JoyConRegion.LeftAux, JoyConButton.LTrigger);
-        this.ProcessData(data[AUX__BUTTONS_INDEX], JoyConRegion.LeftAux, JoyConButton.LShoulder);
-        this.ProcessData(data[AUX__BUTTONS_INDEX], JoyConRegion.LeftAux, JoyConButton.LCapture);
-        this.ProcessData(data[AUX__BUTTONS_INDEX], JoyConRegion.LeftAux, JoyConButton.LMinus);
-        this.ProcessData(data[AUX__BUTTONS_INDEX], JoyConRegion.LeftAux, JoyConButton.LStick);
+        this.ProcessData(data[AUX__BUTTONS_INDEX], auxRegion, JoyConButton.LTrigger);
+        this.ProcessData(data[AUX__BUTTONS_INDEX], auxRegion, JoyConButton.LShoulder);
+        this.ProcessData(data[AUX__BUTTONS_INDEX], auxRegion, JoyConButton.LCapture);
+        this.ProcessData(data[AUX__BUTTONS_INDEX], auxRegion, JoyConButton.LMinus);
+        this.ProcessData(data[AUX__BUTTONS_INDEX], auxRegion, JoyConButton.LStick);
     }
 
-    private void ProcessRightJoyCon(byte[] data)
+    private void ProcessRightJoyCon(ReadOnlySpan<byte> data)
     {
         this.controller.ResetReport();
 
@@ -293,6 +288,5 @@ public sealed class ButtonProcessor
         this.ProcessData(data[AUX__BUTTONS_INDEX], auxRegion, JoyConButton.RPlus);
         this.ProcessData(data[AUX__BUTTONS_INDEX], auxRegion, JoyConButton.RStick);
     }
-
 }
 

@@ -20,3 +20,9 @@ internal static class Constants
 
     public const byte TRIGGER_PRESS = byte.MaxValue;
 }
+
+/// <summary>
+/// Function to handle processing input data from a Joy-Con
+/// </summary>
+/// <param name="data">The data.</param>
+public delegate void ProcessorFunction(ReadOnlySpan<byte> data);

@@ -14,5 +14,4 @@ public class DeviceNotFoundException : Exception
     public DeviceNotFoundException(string message, Exception inner) : base(message, inner)
     {
     }
-
 }

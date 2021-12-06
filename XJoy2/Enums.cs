@@ -1,8 +1,22 @@
-﻿#pragma warning disable RCS1234 // Duplicate enum value.
-#pragma warning disable RCS1191 // Declare enum value as combination of names.
-#pragma warning disable RCS1154 // Sort enum members.
+﻿namespace XJoy2;
 
-namespace XJoy2;
+public enum JoyConRegion
+{
+    LeftDpad,
+    LeftAnalog,
+    LeftAux,
+    RightButtons,
+    RightAnalog,
+    RightAux
+}
+
+public enum JoyConSide : ushort
+{
+    Left = 0x2006,
+    Right = 0x2007
+}
+
+#pragma warning disable CA1069 // Enums values should not be duplicated
 
 /// <summary>
 /// Represents the binary value indicated by the processor.
@@ -53,7 +67,6 @@ public enum JoyConButton : byte
     #endregion right buttons area
 
     #region right aux area
-
     RShoulder = 0x40,
     RTrigger = 0x80,
     RHome = 0x10,
@@ -76,3 +89,5 @@ public enum JoyConButton : byte
 
     #endregion right 8-way analog
 }
+
+#pragma warning restore CA1069 // Enums values should not be duplicated
