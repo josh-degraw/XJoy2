@@ -6,6 +6,10 @@
 		<LangVersion>latest</LangVersion>
 	</PropertyGroup>
 	<ItemGroup>
+	  <Content Remove="C:\Users\JoshDeGraw\.nuget\packages\hidapiadapter\1.0.4\contentFiles\any\netstandard2.0\hidapi32.dll" />
+	  <Content Remove="C:\Users\JoshDeGraw\.nuget\packages\hidapiadapter\1.0.4\contentFiles\any\netstandard2.0\hidapi64.dll" />
+	</ItemGroup>
+	<ItemGroup>
 		<PackageReference Include="HidApiAdapter" Version="1.0.4" />
 		<PackageReference Include="JetBrains.Annotations" Version="2018.3.0" />
 		<PackageReference Include="Nefarius.ViGEm.Client" Version="1.17.178" />
@@ -14,15 +18,14 @@
 			<PrivateAssets>all</PrivateAssets>
 		</PackageReference>
 	</ItemGroup>
+
 	<ItemGroup>
-		<Content Update="C:\Users\Josh\.nuget\packages\hidapiadapter\1.0.4\contentFiles\any\net40\hidapi32.dll">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</Content>
-		<Content Update="C:\Users\Josh\.nuget\packages\hidapiadapter\1.0.4\contentFiles\any\net40\hidapi64.dll">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</Content>
-	</ItemGroup>
-	<ItemGroup>
+		<None Update="hidapi32.dll">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+		<None Update="hidapi64.dll">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
 		<None Update="NLog.config">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>

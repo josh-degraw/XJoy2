@@ -1,22 +1,21 @@
 ﻿using System;
 using System.Runtime.Serialization;
 
-namespace XJoy2
+namespace XJoy2;
+
+[Serializable]
+public class DeviceNotFoundException : Exception
 {
-    [Serializable]
-    public class DeviceNotFoundException : Exception
+    public DeviceNotFoundException()
     {
-        public DeviceNotFoundException()
-        {
-        }
-
-        public DeviceNotFoundException(string message) : base(message)
-        {
-        }
-
-        public DeviceNotFoundException(string message, Exception inner) : base(message, inner)
-        {
-        }
-
     }
+
+    public DeviceNotFoundException(string message) : base(message)
+    {
+    }
+
+    public DeviceNotFoundException(string message, Exception inner) : base(message, inner)
+    {
+    }
+
 }
